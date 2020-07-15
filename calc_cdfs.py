@@ -5,15 +5,15 @@ used for the CDF is a sigmoid of the form:
 
 y = 1 / (1 + exp(-b * (x-a)))
 
-where a and b are free parameters to be optimized, x is the groundwater DEPTH below NAVD88 elevation 
-and y is the expected percentage of time where groundwater is present at this depth.
+where a and b are free parameters to be optimized, x is the NAVD88 groundwater _elevation_ 
+and y is the expected percentage of time where groundwater is present at this elevation.
 '''
 
 import pandas as pd
 import numpy as np
 from scipy.optimize import curve_fit
 
-OUTPUT_LOC = r'U:\GIS\temp\KJG\fluccs\wells_output.csv"
+OUTPUT_LOC = r'U:\GIS\temp\KJG\fluccs\wells_output.csv'
 
 def sanitize_latlon(x):
     '''
@@ -58,17 +58,15 @@ def get_cdf_parameters(x):
     x_sort = np.sort(x)
     cdf = np.array(range(N)) / float(N)
 
-    (a, b), _ = curve_fit(sigmoid, x_sort, cdf)
+    (a, b), _ = curve_fit(sigmoid, x_sort, cdf, p0=(np.median(x_sort), 1.0))
     r_sq = r_squared(cdf, sigmoid(x_sort, a, b))
     return a, b, r_sq
 
 
 def process_df(row):
     this_df = pd.read_csv('data/csvs/{}.csv'.format(row['Dbkey']))
-    gwater_depths = -(this_df['gwater_elev_navd88'] -
-                      row['Elev_NAVD88']).dropna().to_numpy()
-    return get_cdf_parameters(gwater_depths)
-
+    gwater_elev = this_df['gwater_elev_navd88'].dropna().to_numpy()
+    return get_cdf_parameters(gwater_elev)
 
 if __name__ == '__main__':
     wells = pd.read_csv('wells.csv')
@@ -78,6 +76,10 @@ if __name__ == '__main__':
         result_type='expand').rename(
         columns={0: 'sigmoid_a', 1: 'sigmoid_b', 2: 'sigmoid_r2'}
     )
+
+    # Convert latlons to decimal degrees
+    wells['Latitude'] = wells['Latitude'].map(sanitize_latlon)
+    wells['Longitude'] = wells['Longitude'].map(sanitize_latlon) * -1 # flip to west
 
     # Join the two dataframes together, rename last
     all_data = pd.concat([wells, coeffs], axis=1)

@@ -64,12 +64,12 @@ def get_cdf_parameters(x):
 
 
 def process_df(row):
-    this_df = pd.read_csv('data/csvs/{}.csv'.format(row['Dbkey']))
+    this_df = pd.read_csv('data/csvs/{}.csv'.format(row['Dbkey'].zfill(5)))
     gwater_elev = this_df['gwater_elev_navd88'].dropna().to_numpy()
     return get_cdf_parameters(gwater_elev)
 
 if __name__ == '__main__':
-    wells = pd.read_csv('wells.csv')
+    wells = pd.read_csv('wells_one_per_site.csv')
     coeffs = wells.apply(
         process_df,
         axis=1,

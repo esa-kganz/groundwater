@@ -18,12 +18,13 @@ def create_request_url(**kwargs):
     return URL_BASE + '&'.join(url_args)
 
 if __name__ == '__main__':
-    wells = pd.read_csv('wells.csv')
+    wells = pd.read_csv('wells_one_per_site.csv')
     percents = []
 
     for idx, row in wells.iterrows():
-        dbkey = row['Dbkey'].strip()
-        navd_correction = float(row['NAVD 88 Correction'])
+        # Pad the key with zeros to 5 characters
+        dbkey = row['Dbkey'].strip().zfill(5)
+        navd_correction = float(row['NAVD88_correction'])
         print("Dbkey: {}\tCorrection: {}".format(dbkey, navd_correction))
         request_url = create_request_url(v_dbkey=dbkey)
         try:
